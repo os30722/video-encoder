@@ -11,21 +11,37 @@ import (
 
 const video_codec = "h264_qsv"
 
+var h264 = struct {
+	Bitrate    string
+	Profile    string
+	MaxBitRate string
+	MinBitRate string
+	BuffSize   string
+}{
+	Bitrate:    "Bitrate",
+	Profile:    "Profile",
+	MaxBitRate: "MaxBitRate",
+	MinBitRate: "MinBitRate",
+	BuffSize:   "BuffSize",
+}
+
 func RunH264(msg vo.TaskMsg) error {
-	opts := msg.Options
-	fps, _ := strconv.Atoi(opts.Fps)
+	output := msg.Output
+	opts := output.Options
+
+	fps, _ := strconv.Atoi(output.Fps)
 
 	encoder := cmd.GetFfmpeg().Qsv().Input(msg.InputDir).
 		Async().
 		Codec(video_codec).
-		Scale(opts.Width, opts.Height).
-		Profile(opts.Profile).
-		VRate(opts.Fps).
+		Scale(output.Width, output.Height).
+		Profile(opts[h264.Profile]).
+		VRate(output.Fps).
 		Gop(strconv.Itoa(fps * 2)).
-		MaxRate(opts.MaxBitRate).
-		MinRate(opts.MinBitRate).
-		BuffSize(opts.BuffSize).
-		VBitRate(opts.Bitrate).
+		MaxRate(opts[h264.MaxBitRate]).
+		MinRate(opts[h264.MinBitRate]).
+		BuffSize(opts[h264.BuffSize]).
+		VBitRate(opts[h264.Bitrate]).
 		NoAudio().Overwrite().Output(msg.OutputDir)
 
 	fmt.Println(encoder.GetCmd())

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -118,6 +119,18 @@ func (f *ffmpeg) ABitRate(rate string) *ffmpeg {
 
 func (f *ffmpeg) NoAudio() *ffmpeg {
 	f.append("-an")
+	return f
+}
+
+func (f *ffmpeg) SplitVideo(segmentTime string, concatFile string, segmentDir string) *ffmpeg {
+	f.append("-c", "copy", "-map", "v:0", "-segment_time", segmentTime, "-reset_timestamps", "1", "-f",
+		"segment", "-segment_list", filepath.Join(segmentDir, concatFile))
+	return f
+}
+
+func (f *ffmpeg) SplitAudio() *ffmpeg {
+	f.AddOptions("c:a", "copy")
+	f.AddOptions("map", "a:0")
 	return f
 }
 

@@ -6,33 +6,83 @@ import (
 	"strings"
 
 	"github.com/cloud/encoder/vo"
+	"github.com/jackc/pgx/v5"
 )
 
-func (jo JobDao) UpdateAndReturnCompletion(ctx context.Context, jobId int) (bool, error) {
+func (jo JobDao) CreateJob(ctx context.Context) (int, error) {
 	var db = jo.db
 
-	var completed bool
-	err := db.QueryRow(ctx, "update process set completed_parts=completed_parts+1 where job_id=$1 returning completed_parts=total_parts",
-		jobId).Scan(&completed)
+	var jobId int
+	err := db.QueryRow(ctx, "insert into job(status) values($1) returning job_id", "RUNNING").Scan(&jobId)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 
-	return completed, nil
+	return jobId, nil
 }
 
-func (jo JobDao) GetJobFileAndOptions(ctx context.Context, jobId int) (*vo.JobFileAndOpts, error) {
+func (jo JobDao) UpdateProcesses(ctx context.Context, jobId int, processes []vo.Process) error {
+	var db = jo.db
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx, "update job set total_processes=$1 where job_id=$2", len(processes), jobId)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.CopyFrom(ctx, pgx.Identifier{"process"},
+		[]string{"job_id", "part_name", "total_parts"},
+		pgx.CopyFromSlice(len(processes), func(i int) ([]any, error) {
+			return []any{processes[i].JobId, processes[i].PartName, processes[i].TotalPart}, nil
+		}))
+
+	if err = tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (jo JobDao) UpdateAndReturnCompletion(ctx context.Context, jobId int, partName string) (bool, bool, error) {
+	var db = jo.db
+	var completed, jobCompleted bool
+
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return completed, jobCompleted, err
+	}
+	defer tx.Rollback(ctx)
+
+	err = tx.QueryRow(ctx, "update process set completed_parts=completed_parts+1 where job_id=$1 and part_name=$2 returning completed_parts=total_parts",
+		jobId, partName).Scan(&completed)
+	if err != nil {
+		return completed, jobCompleted, err
+	}
+
+	if completed {
+		err = tx.Query(ctx, )
+	}
+
+	return completed, jobCompleted, nil
+}
+
+func (jo JobDao) GetOutputs(ctx context.Context, templateId int) (*vo.EncodeOuputStruct, error) {
 	var db = jo.db
 
-	var info vo.JobFileAndOpts
-	var optStr string
-	err := db.QueryRow(ctx, "select opts,name,file_name,output from process join job on job.job_id = process.job_id where process.job_id = $1", jobId).
-		Scan(&optStr, &info.JobName, &info.FileName, &info.OutputFormats)
+	var info vo.EncodeOuputStruct
+	var outputs string
+
+	err := db.QueryRow(ctx, "select outputs from job_template where template_id=$1", templateId).
+		Scan(&outputs)
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.NewDecoder(strings.NewReader(optStr)).Decode(&info.Opts)
+	err = json.NewDecoder(strings.NewReader(outputs)).Decode(&info)
 	if err != nil {
 		return nil, err
 	}

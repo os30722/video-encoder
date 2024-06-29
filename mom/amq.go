@@ -77,6 +77,10 @@ func GetTaskMsg() (<-chan amqp.Delivery, error) {
 	return msgChan, nil
 }
 
+func PublishTask(ctx context.Context, input interface{}) error {
+	return PublishJson(ctx, taskName, input)
+}
+
 func PublishJson(ctx context.Context, queeName string, input interface{}) error {
 	buffer, err := json.Marshal(input)
 	if err != nil {
