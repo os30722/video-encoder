@@ -64,7 +64,16 @@ func (jo JobDao) UpdateAndReturnCompletion(ctx context.Context, jobId int, partN
 	}
 
 	if completed {
-		err = tx.Query(ctx, )
+		err = tx.QueryRow(ctx, "update job set completed_processed=completed_processed+1 where job_id=$1' returning completed_processes=total_processes",
+			jobId).Scan(&jobCompleted)
+		if err != nil {
+			return completed, jobCompleted, err
+		}
+
+		_, err = tx.Exec(ctx, "delete from process where job_id=$1 and part_name=$2", jobId, partName)
+		if err != nil {
+			return completed, jobCompleted, err
+		}
 	}
 
 	return completed, jobCompleted, nil

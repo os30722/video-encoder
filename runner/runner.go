@@ -49,7 +49,7 @@ func Start(ctx context.Context, jobDao *jobDb.JobDao) error {
 			if taskMsg.Output.Height != "" {
 				partName := taskMsg.Output.Height + "@" + taskMsg.Output.Fps
 
-				completed, err := jobDao.UpdateAndReturnCompletion(ctx, taskMsg.JobId, partName)
+				completed, jobCompleted, err := jobDao.UpdateAndReturnCompletion(ctx, taskMsg.JobId, partName)
 				if err != nil {
 					log.Print(err)
 					return
@@ -61,12 +61,14 @@ func Start(ctx context.Context, jobDao *jobDb.JobDao) error {
 						log.Print(err)
 					}
 				}
-			}
 
-			// err = codecs.Concat(info)
-			// if err != nil {
-			// 	log.Println(err)
-			// }
+				if jobCompleted {
+					err = codecs.Concat(info)
+					if err != nil {
+						log.Println(err)
+					}
+				}
+			}
 
 			msg.Ack(false)
 		}(msg)
