@@ -13,10 +13,10 @@ import (
 	"github.com/cloud/encoder/vo"
 )
 
-func SubmitJob(ctx context.Context, msg vo.TaskMsg, jobDao *jobDb.JobDao) error {
+func SubmitJob(ctx context.Context, msg vo.TaskMsg, jobDao jobDb.JobRepo) error {
 	inputDir := msg.InputDir
 
-	jobId, err := jobDao.CreateJob(ctx)
+	jobId, err := jobDao.CreateJob(ctx, msg.JobId)
 	if err != nil {
 		return err
 	}

@@ -1,8 +1,13 @@
 package vo
 
-type EncodeOuputStruct struct {
+type EncodeOutputStruct struct {
 	Video []EncodeOutput
 	Audio EncodeOutput
+}
+
+type JobTemplate struct {
+	Streams []string
+	Outputs EncodeOutputStruct
 }
 
 type EncodeOutput struct {

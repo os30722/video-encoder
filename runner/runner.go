@@ -8,13 +8,14 @@ import (
 
 	"github.com/cloud/encoder/codecs"
 	"github.com/cloud/encoder/mom"
+	"github.com/cloud/encoder/packager"
 	"github.com/cloud/encoder/repository/jobDb"
 	"github.com/cloud/encoder/vo"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func Start(ctx context.Context, jobDao *jobDb.JobDao) error {
+func Start(ctx context.Context, jobDao jobDb.JobRepo) error {
 	msgChan, err := mom.GetTaskMsg()
 	if err != nil {
 		return err
@@ -63,9 +64,8 @@ func Start(ctx context.Context, jobDao *jobDb.JobDao) error {
 				}
 
 				if jobCompleted {
-					err = codecs.Concat(info)
-					if err != nil {
-						log.Println(err)
+					if err = packager.Package(ctx, taskMsg.JobId, jobDao); err != nil {
+						log.Print(err)
 					}
 				}
 			}

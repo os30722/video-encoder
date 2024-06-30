@@ -18,8 +18,9 @@ func GetJobDao(db *pgxpool.Pool) *JobDao {
 }
 
 type JobRepo interface {
-	CreateJob(ctx context.Context) (int, error)
+	CreateJob(ctx context.Context, templateId int) (int, error)
 	UpdateProcesses(ctx context.Context, jobId int, processes []vo.Process) error
 	UpdateAndReturnCompletion(ctx context.Context, jobId int, partName string) (bool, bool, error)
-	GetJobFileAndOptions(ctx context.Context, jobId int) (*vo.EncodeOuputStruct, error)
+	GetOutputs(ctx context.Context, templateId int) (*vo.EncodeOutputStruct, error)
+	GetTemplate(ctx context.Context, jobId int) (*vo.JobTemplate, error)
 }

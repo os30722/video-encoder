@@ -25,17 +25,5 @@ func Concat(task vo.TaskMsg) error {
 	if err != nil {
 		return err
 	}
-
-	// for _, format := range jobInfo.OutputFormats {
-	// 	var err error
-	// 	switch format {
-	// 	case "dash":
-	// 		err = packager.OutputDash(jobInfo)
-	// 	}
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-
 	return nil
 }

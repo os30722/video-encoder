@@ -9,11 +9,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (jo JobDao) CreateJob(ctx context.Context) (int, error) {
+func (jo JobDao) CreateJob(ctx context.Context, templateId int) (int, error) {
 	var db = jo.db
 
 	var jobId int
-	err := db.QueryRow(ctx, "insert into job(status) values($1) returning job_id", "RUNNING").Scan(&jobId)
+	err := db.QueryRow(ctx, "insert into job(template_id,status) values($1,$2) returning job_id", templateId, "RUNNING").Scan(&jobId)
 	if err != nil {
 		return 0, err
 	}
@@ -40,6 +40,10 @@ func (jo JobDao) UpdateProcesses(ctx context.Context, jobId int, processes []vo.
 			return []any{processes[i].JobId, processes[i].PartName, processes[i].TotalPart}, nil
 		}))
 
+	if err != nil {
+		return err
+	}
+
 	if err = tx.Commit(ctx); err != nil {
 		return err
 	}
@@ -64,7 +68,7 @@ func (jo JobDao) UpdateAndReturnCompletion(ctx context.Context, jobId int, partN
 	}
 
 	if completed {
-		err = tx.QueryRow(ctx, "update job set completed_processed=completed_processed+1 where job_id=$1' returning completed_processes=total_processes",
+		err = tx.QueryRow(ctx, "update job set completed_processes=completed_processes+1 where job_id=$1 returning completed_processes=total_processes",
 			jobId).Scan(&jobCompleted)
 		if err != nil {
 			return completed, jobCompleted, err
@@ -76,13 +80,39 @@ func (jo JobDao) UpdateAndReturnCompletion(ctx context.Context, jobId int, partN
 		}
 	}
 
+	if err = tx.Commit(ctx); err != nil {
+		return completed, jobCompleted, err
+	}
+
 	return completed, jobCompleted, nil
 }
 
-func (jo JobDao) GetOutputs(ctx context.Context, templateId int) (*vo.EncodeOuputStruct, error) {
+func (jo JobDao) GetTemplate(ctx context.Context, jobId int) (*vo.JobTemplate, error) {
 	var db = jo.db
 
-	var info vo.EncodeOuputStruct
+	var template vo.JobTemplate
+	var outputStr string
+
+	err := db.QueryRow(ctx, "select outputs,streams from job join job_template on job.template_id=job_template.template_id where job_id=$1",
+		jobId).Scan(&outputStr, &template.Streams)
+	if err != nil {
+		return nil, err
+	}
+
+	var e vo.EncodeOutputStruct
+	if err = json.NewDecoder(strings.NewReader(outputStr)).Decode(&e); err != nil {
+		return nil, err
+	}
+
+	template.Outputs = e
+
+	return &template, nil
+}
+
+func (jo JobDao) GetOutputs(ctx context.Context, templateId int) (*vo.EncodeOutputStruct, error) {
+	var db = jo.db
+
+	var info vo.EncodeOutputStruct
 	var outputs string
 
 	err := db.QueryRow(ctx, "select outputs from job_template where template_id=$1", templateId).
