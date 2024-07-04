@@ -24,6 +24,7 @@ func Start(ctx context.Context, jobDao jobDb.JobRepo) error {
 	fmt.Println("Listening for messages")
 	for msg := range msgChan {
 		go func(msg amqp.Delivery) {
+
 			var taskMsg vo.TaskMsg
 
 			err := json.Unmarshal(msg.Body, &taskMsg)

@@ -3,7 +3,7 @@ package cmd
 func (f *ffmpeg) ConcatVideo(concatFile string) *ffmpeg {
 	f.AddOptions("f", "concat")
 	f.Input(concatFile)
-	f.Codec("copy")
+	f.VCodec("copy")
 
 	return f
 }

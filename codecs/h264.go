@@ -31,9 +31,8 @@ func RunH264(msg vo.TaskMsg) error {
 
 	fps, _ := strconv.Atoi(output.Fps)
 
-	encoder := cmd.GetFfmpeg().Qsv().Input(msg.InputDir).
-		Async().
-		Codec(video_codec).
+	encoder := cmd.GetFfmpeg().Qsv().Async().Input(msg.InputDir).
+		VCodec(video_codec).
 		Scale(output.Width, output.Height).
 		Profile(opts[h264.Profile]).
 		VRate(output.Fps).
@@ -42,7 +41,7 @@ func RunH264(msg vo.TaskMsg) error {
 		MinRate(opts[h264.MinBitRate]).
 		BuffSize(opts[h264.BuffSize]).
 		VBitRate(opts[h264.Bitrate]).
-		NoAudio().Overwrite().Output(msg.OutputDir)
+		NoAudio().Overwrite().Async().Output(msg.OutputDir)
 
 	fmt.Println(encoder.GetCmd())
 

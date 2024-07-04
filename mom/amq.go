@@ -10,7 +10,7 @@ import (
 
 const (
 	timeOut  = 5 * time.Second
-	parallel = 8
+	parallel = 6
 )
 
 var (

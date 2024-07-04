@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -57,8 +58,13 @@ func (f *ffmpeg) Input(file string) *ffmpeg {
 	return f
 }
 
-func (f *ffmpeg) Codec(codec string) *ffmpeg {
+func (f *ffmpeg) VCodec(codec string) *ffmpeg {
 	f.AddOptions("c:v", codec)
+	return f
+}
+
+func (f *ffmpeg) ACodec(codec string) *ffmpeg {
+	f.AddOptions("c:a", codec)
 	return f
 }
 
@@ -144,8 +150,8 @@ func (f ffmpeg) RunInDir(dir string) error {
 	if dir != "" {
 		cmd.Dir = dir
 	}
-	_, err := cmd.CombinedOutput()
-	// log.Print(string(info))
+	info, err := cmd.CombinedOutput()
+	log.Print(string(info))
 	if err != nil {
 		return err
 	}

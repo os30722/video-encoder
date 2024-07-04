@@ -22,11 +22,12 @@ func RunAac(msg vo.TaskMsg) error {
 	output := msg.Output
 	opts := output.Options
 
-	encoder := cmd.GetFfmpeg().Input(msg.InputDir).
-		Async().
-		Codec(audio_codec).
+	encoder := cmd.GetFfmpeg().Async().Input(msg.InputDir).
+		ACodec(audio_codec).
 		ABitRate(opts[aac.BitRate]).
 		ARate(opts[aac.SampleRate]).
+		Overwrite().
+		Async().
 		Output(msg.OutputDir)
 
 	fmt.Println(encoder.GetCmd())
