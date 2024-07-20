@@ -15,6 +15,10 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const (
+	outputDir = "E:/test/output"
+)
+
 func Start(ctx context.Context, jobDao jobDb.JobRepo) error {
 	msgChan, err := mom.GetTaskMsg()
 	if err != nil {
@@ -25,33 +29,41 @@ func Start(ctx context.Context, jobDao jobDb.JobRepo) error {
 	for msg := range msgChan {
 		go func(msg amqp.Delivery) {
 
-			var taskMsg vo.TaskMsg
+			var taskMsg vo.TaskMsgHolder
 
 			err := json.Unmarshal(msg.Body, &taskMsg)
 			if err != nil {
 				log.Printf("Error in message %s => %s", string(msg.Body), err)
 			}
 
+			fmt.Println(taskMsg)
+
 			switch codec := taskMsg.Codec; codec {
 			case "split":
+				taskMsg.OutputDir = outputDir
 				err = SubmitJob(ctx, taskMsg, jobDao)
 			case "h264":
-				err = codecs.RunH264(taskMsg)
-			case "aac":
-				err = codecs.RunAac(taskMsg)
+				fmt.Println(taskMsg)
+				var opts []vo.VideoH264
+				err := json.Unmarshal(taskMsg.Outputs, &opts)
+				if err != nil {
+					log.Printf("Error in message %s => %s", string(msg.Body), err)
+				}
+				fmt.Println(opts)
+				err = codecs.RunH264(taskMsg, opts)
+			// case "aac":
+			// 	err = codecs.RunAac(taskMsg)
 			default:
 				log.Println("Error Codec Not Found ")
 			}
 
-			if err != nil {
-				log.Println(err)
+			// if err != nil {
+			// 	log.Println(err)
 
-			}
+			// }
 
-			if taskMsg.Output.Height != "" {
-				partName := taskMsg.Output.Height + "@" + taskMsg.Output.Fps
-
-				completed, jobCompleted, err := jobDao.UpdateAndReturnCompletion(ctx, taskMsg.JobId, partName)
+			if taskMsg.Type == "video" {
+				completed, jobCompleted, err := jobDao.UpdateAndReturnCompletion(ctx, taskMsg.JobId, taskMsg.Codec)
 				if err != nil {
 					log.Print(err)
 					return

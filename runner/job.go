@@ -1,114 +1,97 @@
 package runner
 
-import (
-	"context"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
+// func SubmitJob(ctx context.Context, msg vo.TaskMsg, jobDao jobDb.JobRepo) error {
+// 	inputDir := msg.InputDir
 
-	"github.com/cloud/encoder/codecs"
-	"github.com/cloud/encoder/mom"
-	"github.com/cloud/encoder/repository/jobDb"
-	"github.com/cloud/encoder/vo"
-)
+// 	jobId, err := jobDao.CreateJob(ctx, msg.JobId)
+// 	if err != nil {
+// 		return err
+// 	}
 
-func SubmitJob(ctx context.Context, msg vo.TaskMsg, jobDao jobDb.JobRepo) error {
-	inputDir := msg.InputDir
+// 	outputDir := filepath.Join(msg.OutputDir, strconv.Itoa(jobId))
 
-	jobId, err := jobDao.CreateJob(ctx, msg.JobId)
-	if err != nil {
-		return err
-	}
+// 	err = codecs.SplitVideo(inputDir, outputDir)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	outputDir := filepath.Join(msg.OutputDir, strconv.Itoa(jobId))
+// 	dir, err := os.Open(outputDir)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer dir.Close()
 
-	err = codecs.SplitVideo(inputDir, outputDir)
-	if err != nil {
-		return err
-	}
+// 	files, err := dir.Readdirnames(-10)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	dir, err := os.Open(outputDir)
-	if err != nil {
-		return err
-	}
-	defer dir.Close()
+// 	outputs, err := jobDao.GetOutputs(ctx, msg.JobId)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	files, err := dir.Readdirnames(-10)
-	if err != nil {
-		return err
-	}
+// 	vopts := outputs.Video
+// 	// aopts := outputs.Audio
 
-	outputs, err := jobDao.GetOutputs(ctx, msg.JobId)
-	if err != nil {
-		return err
-	}
+// 	numOfParts := len(files) - 2
 
-	vopts := outputs.Video
-	aopts := outputs.Audio
+// 	// task := vo.TaskMsg{
+// 	// 	JobId:    jobId,
+// 	// 	InputDir: filepath.Join(outputDir, codecs.AudioOutputFormat),
+// 	// 	Codec:    aopts.Codec,
+// 	// 	Output:   aopts,
+// 	// }
 
-	numOfParts := len(files) - 2
+// 	// if err = mom.PublishTask(ctx, task); err != nil {
+// 	// 	return err
+// 	// }
 
-	task := vo.TaskMsg{
-		JobId:     jobId,
-		InputDir:  filepath.Join(outputDir, codecs.AudioOutputFormat),
-		OutputDir: filepath.Join(outputDir, "encoded_"+codecs.AudioOutputFormat),
-		Codec:     aopts.Codec,
-		Output:    aopts,
-	}
+// 	processes := make([]vo.Process, 0, len(vopts))
 
-	if err = mom.PublishTask(ctx, task); err != nil {
-		return err
-	}
+// 	for _, output := range vopts {
+// 		partName := output.Height + "@" + output.Fps
+// 		path := filepath.Join(outputDir, partName)
+// 		os.Mkdir(path, 0777)
 
-	processes := make([]vo.Process, 0, len(vopts))
+// 		data, err := os.ReadFile(filepath.Join(outputDir, "input.ffconcat"))
+// 		if err != nil {
+// 			return err
+// 		}
 
-	for _, output := range vopts {
-		partName := output.Height + "@" + output.Fps
-		path := filepath.Join(outputDir, partName)
-		os.Mkdir(path, 0777)
+// 		err = os.WriteFile(filepath.Join(path, "input.ffconcat"), data, 0777)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		for _, file := range files {
-			if !(strings.HasPrefix(file, "out")) {
-				continue
-			}
+// 		process := vo.Process{
+// 			JobId:     jobId,
+// 			PartName:  partName,
+// 			TotalPart: numOfParts,
+// 		}
 
-			task := vo.TaskMsg{
-				JobId:     jobId,
-				InputDir:  filepath.Join(outputDir, file),
-				OutputDir: filepath.Join(path, file),
-				Codec:     output.Codec,
-				Output:    output,
-			}
+// 		processes = append(processes, process)
+// 	}
 
-			if err = mom.PublishTask(ctx, task); err != nil {
-				return err
-			}
+// 	for _, file := range files {
+// 		if !(strings.HasPrefix(file, "out")) {
+// 			continue
+// 		}
 
-			data, err := os.ReadFile(filepath.Join(outputDir, "input.ffconcat"))
-			if err != nil {
-				return err
-			}
+// 		task := vo.TaskMsg{
+// 			JobId:    jobId,
+// 			InputDir: filepath.Join(outputDir, file),
+// 		}
 
-			err = os.WriteFile(filepath.Join(path, "input.ffconcat"), data, 0777)
-			if err != nil {
-				return err
-			}
-		}
+// 		if err = mom.PublishTask(ctx, task); err != nil {
+// 			return err
+// 		}
+// 	}
 
-		process := vo.Process{
-			JobId:     jobId,
-			PartName:  partName,
-			TotalPart: numOfParts,
-		}
+// 	err = jobDao.UpdateProcesses(ctx, jobId, processes)
+// 	if err != nil {
+// 		return err
+// 	}
 
-		processes = append(processes, process)
-	}
-
-	err = jobDao.UpdateProcesses(ctx, jobId, processes)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
+// 	return nil
+// }

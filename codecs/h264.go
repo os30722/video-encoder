@@ -3,6 +3,8 @@ package codecs
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/cloud/encoder/cmd"
@@ -25,30 +27,41 @@ var h264 = struct {
 	BuffSize:   "BuffSize",
 }
 
-func RunH264(msg vo.TaskMsg) error {
-	output := msg.Output
-	opts := output.Options
+func RunH264(msg vo.TaskMsgHolder, options []vo.VideoH264) error {
+	// output := msg.Output
+	// opts := output.Options
+	inputDir := msg.InputDir
+	prevPart := ""
 
-	fps, _ := strconv.Atoi(output.Fps)
+	for _, opts := range options {
+		partName := opts.Height + "@" + opts.Fps
 
-	encoder := cmd.GetFfmpeg().Qsv().Async().Input(msg.InputDir).
-		VCodec(video_codec).
-		Scale(output.Width, output.Height).
-		Profile(opts[h264.Profile]).
-		VRate(output.Fps).
-		Gop(strconv.Itoa(fps * 2)).
-		MaxRate(opts[h264.MaxBitRate]).
-		MinRate(opts[h264.MinBitRate]).
-		BuffSize(opts[h264.BuffSize]).
-		VBitRate(opts[h264.Bitrate]).
-		NoAudio().Overwrite().Async().Output(msg.OutputDir)
+		path := filepath.Join(msg.OutputDir, partName)
+		os.Mkdir(path, 0777)
 
-	fmt.Println(encoder.GetCmd())
+		fps, _ := strconv.Atoi(opts.Fps)
 
-	if err := encoder.Run(); err != nil {
-		log.Printf("Error in running ffmepg (h264) => %s", err)
-		panic(err)
-		return err
+		encoder := cmd.GetFfmpeg().Qsv().Async().Input(filepath.Join(inputDir, prevPart, msg.File)).
+			VCodec(video_codec).
+			Scale(opts.Width, opts.Height).
+			Profile(opts.Profile).
+			VRate(opts.Fps).
+			Gop(strconv.Itoa(fps * 2)).
+			MaxRate(opts.MaxBitRate).
+			MinRate(opts.MinBitRate).
+			BuffSize(opts.BuffSize).
+			VBitRate(opts.Bitrate).
+			NoAudio().Overwrite().Async().Output(filepath.Join(msg.OutputDir, partName, msg.File))
+
+		fmt.Println(encoder.GetCmd())
+
+		if err := encoder.Run(); err != nil {
+			log.Printf("Error in running ffmepg (h264) => %s", err)
+			panic(err)
+			return err
+		}
+
+		prevPart = partName
 	}
 
 	return nil
