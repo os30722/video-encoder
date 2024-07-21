@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -17,7 +18,7 @@ const (
 	jobOutputDir = "E:/test/output"
 )
 
-func SubmitJob(ctx context.Context, msg vo.TaskMsgHolder, jobDao jobDb.JobRepo) error {
+func SubmitJob(ctx context.Context, msg vo.TaskMsg, jobDao jobDb.JobRepo) error {
 	inputDir := msg.InputDir
 
 	jobId, err := jobDao.CreateJob(ctx, msg.JobId)
@@ -61,6 +62,11 @@ func SubmitJob(ctx context.Context, msg vo.TaskMsgHolder, jobDao jobDb.JobRepo) 
 				continue
 			}
 
+			out, err := json.Marshal(output.Options)
+			if err != nil {
+				return err
+			}
+
 			task := vo.TaskMsg{
 				JobId:     jobId,
 				InputDir:  outputDir,
@@ -68,7 +74,7 @@ func SubmitJob(ctx context.Context, msg vo.TaskMsgHolder, jobDao jobDb.JobRepo) 
 				File:      file,
 				Type:      "video",
 				Codec:     output.Codec,
-				Outputs:   output.Options,
+				Outputs:   out,
 			}
 
 			if err = mom.PublishTask(ctx, task); err != nil {

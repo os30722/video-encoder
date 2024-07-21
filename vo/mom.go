@@ -9,7 +9,7 @@ type TaskMsg struct {
 	OutputDir string
 	Type      string
 	Codec     string
-	Outputs   []interface{}
+	Outputs   []byte
 }
 
 type TaskMsgHolder struct {

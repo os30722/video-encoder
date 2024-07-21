@@ -2,12 +2,14 @@ package packager
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"path/filepath"
 	"strconv"
 
 	"github.com/cloud/encoder/cmd"
 	"github.com/cloud/encoder/repository/jobDb"
+	"github.com/cloud/encoder/vo"
 )
 
 const (
@@ -27,7 +29,15 @@ func Package(ctx context.Context, jobId int, jobDao jobDb.JobRepo) error {
 		return err
 	}
 
-	vopts := template.Outputs.Video
+	var vopts = make([]vo.VideoConcat, 0, len(template.Outputs.Video))
+
+	for _, group := range template.Outputs.Video {
+		var outputs []vo.VideoConcat
+		if err = json.Unmarshal(group.Options, &outputs); err != nil {
+			return err
+		}
+
+	}
 
 	inputStr := make([]string, 0, len(vopts)+1) // including audio
 

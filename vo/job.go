@@ -12,7 +12,7 @@ type JobTemplate struct {
 
 type EncodeOutput struct {
 	Codec   string
-	Options []interface{}
+	Options []byte
 }
 
 type VideoH264 struct {
