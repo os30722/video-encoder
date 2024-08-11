@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -18,7 +19,7 @@ const (
 	jobOutputDir = "E:/test/output"
 )
 
-func SubmitJob(ctx context.Context, msg vo.TaskMsg, jobDao jobDb.JobRepo) error {
+func SubmitJob(ctx context.Context, msg vo.TaskMsgHolder, jobDao jobDb.JobRepo) error {
 	inputDir := msg.InputDir
 
 	jobId, err := jobDao.CreateJob(ctx, msg.JobId)
@@ -46,6 +47,7 @@ func SubmitJob(ctx context.Context, msg vo.TaskMsg, jobDao jobDb.JobRepo) error 
 
 	outputs, err := jobDao.GetOutputs(ctx, msg.JobId)
 	if err != nil {
+		log.Print("deded")
 		return err
 	}
 
@@ -67,7 +69,7 @@ func SubmitJob(ctx context.Context, msg vo.TaskMsg, jobDao jobDb.JobRepo) error 
 				return err
 			}
 
-			task := vo.TaskMsg{
+			task := vo.TaskMsgHolder{
 				JobId:     jobId,
 				InputDir:  outputDir,
 				OutputDir: filepath.Join(jobOutputDir, strconv.Itoa(jobId)),

@@ -28,7 +28,7 @@ func Start(ctx context.Context, jobDao jobDb.JobRepo) error {
 	for msg := range msgChan {
 		go func(msg amqp.Delivery) {
 
-			var taskMsg vo.TaskMsg
+			var taskMsg vo.TaskMsgHolder
 
 			err := json.Unmarshal(msg.Body, &taskMsg)
 			if err != nil {
@@ -42,7 +42,6 @@ func Start(ctx context.Context, jobDao jobDb.JobRepo) error {
 				taskMsg.OutputDir = outputDir
 				err = SubmitJob(ctx, taskMsg, jobDao)
 			case "h264":
-				fmt.Println(taskMsg)
 				var opts []vo.VideoH264
 				err := json.Unmarshal(taskMsg.Outputs, &opts)
 				if err != nil {
@@ -56,10 +55,10 @@ func Start(ctx context.Context, jobDao jobDb.JobRepo) error {
 				log.Println("Error Codec Not Found ")
 			}
 
-			// // if err != nil {
-			// // 	log.Println(err)
+			if err != nil {
+				log.Println(err)
 
-			// // }
+			}
 
 			// if taskMsg.Type == "video" {
 			// 	completed, jobCompleted, err := jobDao.UpdateAndReturnCompletion(ctx, taskMsg.JobId, taskMsg.Codec)

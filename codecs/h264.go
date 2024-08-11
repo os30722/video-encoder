@@ -27,7 +27,7 @@ var h264 = struct {
 	BuffSize:   "BuffSize",
 }
 
-func RunH264(msg vo.TaskMsg, options []vo.VideoH264) error {
+func RunH264(msg vo.TaskMsgHolder, options []vo.VideoH264) error {
 	// output := msg.Output
 	// opts := output.Options
 	inputDir := msg.InputDir

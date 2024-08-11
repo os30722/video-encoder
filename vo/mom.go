@@ -2,16 +2,6 @@ package vo
 
 import "encoding/json"
 
-type TaskMsg struct {
-	JobId     int
-	InputDir  string
-	File      string
-	OutputDir string
-	Type      string
-	Codec     string
-	Outputs   []byte
-}
-
 type TaskMsgHolder struct {
 	JobId     int
 	InputDir  string

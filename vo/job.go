@@ -1,5 +1,7 @@
 package vo
 
+import "encoding/json"
+
 type EncodeOutputStruct struct {
 	Video []EncodeOutput
 	Audio EncodeOutput
@@ -12,7 +14,7 @@ type JobTemplate struct {
 
 type EncodeOutput struct {
 	Codec   string
-	Options []byte
+	Options json.RawMessage
 }
 
 type VideoH264 struct {

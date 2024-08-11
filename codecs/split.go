@@ -13,7 +13,7 @@ const (
 	concatFile        = "input.ffconcat"
 	videoOutputFormat = "out_%d.mp4"
 	AudioOutputFormat = "audio.m4a"
-	segmentTime       = "00:04:00"
+	segmentTime       = "00:00:10"
 )
 
 func SplitVideo(inputDir string, outputDir string) error {

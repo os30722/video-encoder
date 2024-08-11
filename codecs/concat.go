@@ -15,7 +15,7 @@ const (
 	extension = ".mp4"
 )
 
-func Concat(task vo.TaskMsg) error {
+func Concat(task vo.TaskMsgHolder) error {
 	folderDir := filepath.Join(outputDir, strconv.Itoa(task.JobId))
 
 	var outputs []vo.VideoConcat
